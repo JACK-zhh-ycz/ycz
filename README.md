@@ -2,6 +2,8 @@
 
 一个零第三方依赖的 PPTX 编辑器：C++ 内核 + Python 界面，插件可扩展，可导出带脚本与媒体的 HTML 放映。
 
+仓库地址：https://github.com/JACK-zhh-ycz/ycz
+
 ![截图](docs/screenshot.png)
 
 ## 中文
