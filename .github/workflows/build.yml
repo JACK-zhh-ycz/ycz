@@ -15,6 +15,12 @@ jobs:
       - name: Install MinGW-w64
         run: choco install mingw -y --no-progress
 
+      - name: Locate toolchain
+        run: |
+          where.exe g++
+          where.exe windres
+          if (Test-Path C:\ProgramData\mingw64\bin) { Get-ChildItem C:\ProgramData\mingw64\bin\g++.exe }
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -24,7 +30,12 @@ jobs:
         run: pip install customtkinter pillow
 
       - name: Build kernel + plugins
-        run: powershell -ExecutionPolicy Bypass -File build.ps1
+        env:
+          YCZ_GXX: C:\ProgramData\mingw64\bin\g++.exe
+          YCZ_RC: C:\ProgramData\mingw64\bin\windres.exe
+        run: |
+          $env:PATH = "C:\ProgramData\mingw64\bin;$env:PATH"
+          powershell -ExecutionPolicy Bypass -File build.ps1
 
       - name: Kernel smoke test
         run: python test_core.py
