@@ -12,14 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install MinGW-w64
-        run: choco install mingw -y --no-progress
-
-      - name: Locate toolchain
-        run: |
-          where.exe g++
-          where.exe windres
-          if (Test-Path C:\ProgramData\mingw64\bin) { Get-ChildItem C:\ProgramData\mingw64\bin\g++.exe }
+      - name: Setup MSYS2 (MinGW-w64 toolchain)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: mingw-w64-x86_64-gcc
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -29,12 +27,14 @@ jobs:
       - name: Install Python deps
         run: pip install customtkinter pillow
 
-      - name: Build kernel + plugins
-        env:
-          YCZ_GXX: C:\ProgramData\mingw64\bin\g++.exe
-          YCZ_RC: C:\ProgramData\mingw64\bin\windres.exe
+      - name: Locate toolchain
         run: |
-          $env:PATH = "C:\ProgramData\mingw64\bin;$env:PATH"
+          where.exe g++
+          where.exe windres
+
+      - name: Build kernel + plugins
+        run: |
+          $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
           powershell -ExecutionPolicy Bypass -File build.ps1
 
       - name: Kernel smoke test
