@@ -1,0 +1,38 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MinGW-w64
+        run: choco install mingw -y --no-progress
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python deps
+        run: pip install customtkinter pillow
+
+      - name: Build kernel + plugins
+        run: powershell -ExecutionPolicy Bypass -File build.ps1
+
+      - name: Kernel smoke test
+        run: python test_core.py
+
+      - name: Upload kernel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ycz-kernel
+          path: |
+            build/pptx-core.dll
+            build/plugins/*.dll
