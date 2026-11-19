@@ -15,10 +15,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Unzip source
-        run: unzip -oq source.zip -d .
+        run: unzip -oq source.zip -d . -x ".github/workflows/*"
 
       - name: Remove archive
-        run: rm -f source.zip
+        run: rm -f source.zip ycz-upload.zip
 
       - name: Commit tree
         run: |
