@@ -3,6 +3,7 @@
 一个零第三方依赖的 PPTX 编辑器：C++ 内核 + Python 界面，插件可扩展，可导出带脚本与媒体的 HTML 放映。
 
 仓库地址：https://github.com/JACK-zhh-ycz/ycz
+下载成品：https://github.com/JACK-zhh-ycz/ycz/releases
 
 ![截图](docs/screenshot.png)
 
@@ -69,7 +70,7 @@ int InitPlugin(const PptHostIf* host);
 
 本项目由 **Qwen** 与 **Doubao** 两个模型先后协作完成：早期版本由 **Qwen** 搭建底层与界面骨架，后续功能由 **Doubao** 迭代实现。人类作者负责需求定义、交互设计、逐轮验收、缺陷定位与发布维护。
 
-项目以 MIT 协议开源，欢迎任何人修改、分发、商用。
+项目以 CC0 1.0 协议开源，已放入公共领域，欢迎任何人修改、分发、商用，无需署名。
 
 ## English
 
@@ -134,10 +135,10 @@ Optional hooks: `HookHtmlHead`, `HookHtmlSlide`, `HookTransition`, `HookCommand`
 
 This project was built by two models in sequence: **Qwen** created the early foundation and UI skeleton, and **Doubao** implemented the later feature work. The human author defined requirements, designed interactions, reviewed and tested every round, located defects and handles releases.
 
-Released under the MIT license: modify, distribute and use commercially as you like.
+Released under CC0 1.0: the work is in the public domain, modify, distribute and use commercially without attribution.
 
 > AI 翻译
 
 ## License
 
-MIT
+CC0 1.0 Universal (public domain dedication). See [LICENSE](LICENSE).
