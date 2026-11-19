@@ -1,0 +1,30 @@
+# 编译产物 / 运行产物
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# 二进制
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.o
+*.obj
+*.res
+
+# 打包
+*.zip
+
+# 编辑器
+.vscode/
+.idea/
+.DS_Store
+
+# 个人数据
+交接文件.txt
