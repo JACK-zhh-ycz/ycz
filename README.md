@@ -1,120 +1,140 @@
 # ycz
 
-**一个零第三方依赖的 PPTX 编辑器 —— C++ 内核 + Python 界面，插件可扩展，可导出带脚本与媒体的 HTML 放映。**
-
-> 目标不是"再做一个 PowerPoint"，而是做一个**装得下插件、改得动内核、能带走一份能放映的 HTML** 的轻量办公工具。
+一个零第三方依赖的 PPTX 编辑器：C++ 内核 + Python 界面，插件可扩展，可导出带脚本与媒体的 HTML 放映。
 
 ![截图](docs/screenshot.png)
 
-## 它是什么
+## 中文
 
-- **C++ 内核**（`src/`）：手写 ZIP / DEFLATE / XML DOM、PPTX 读写、GDI+ 渲染、HTML 放映导出
-- **Python 界面**（`src/pyui/`）：customtkinter 三栏布局 + tkinter Canvas 画布
-- **插件系统**（`plugins/`、`sdk/`）：运行时加载 `build/plugins/*.dll`，一个 dll = 一个插件
-- **无第三方依赖**：C++ 侧除 Windows 自带 GDI+ 外不链任何库；ZIP 解压与 XML 解析全部手写
+**ycz** 是一个轻量的演示文稿编辑器。C++ 内核负责解析、渲染与写回 `.pptx`，Python 界面负责交互，插件以 DLL 的形式在运行时加载。目标不是替代 PowerPoint，而是提供一个**内核固定、行为可换、能把演示带走**的工具。
 
-## 功能
+### 功能
 
-| 模块 | 已实现 |
-|---|---|
-| 文档 | 打开/新建/保存/另存、撤销 80 步、模板新建 |
-| 文字 | 字体/字号/粗斜下划线/颜色/对齐、画面内就地编辑、超长文字自动缩小 |
-| 形状 | 45 个预设（基本/线条箭头/立体/流程图）、拖动、缩放、旋转、多选、对齐分布、吸附参考线 |
-| 表格 | Excel 风格（细网格 + 灰表头）、整表拖动、单元格选中/输入/方向键导航、加删行列、导入/导出 Excel |
-| 媒体 | 图片、音视频、网页快照、嵌入外部程序、每个形状可挂 JS 脚本（带语法高亮） |
-| 动画 | 17 种切换动画 + 形状入场动画 |
-| 导出 | 单文件 HTML 放映、分离 JS 版；导出 HTML 内可画笔批注、翻页、全屏 |
-| 插件 | 水印 / 进度条 / 统计 / 网页嵌入，见 sdk/ |
+- 打开 / 新建 / 保存 / 另存 `.pptx`，撤销 80 步
+- 文字：字体、字号、颜色、粗斜下划线、对齐、画面内就地编辑、超长自动缩小
+- 形状：45 个预设（基本 / 线条箭头 / 立体 / 流程图），拖动、缩放、旋转、多选、对齐分布、吸附参考线
+- 表格：Excel 风格网格与表头、整表拖动、单元格输入、增删行列、导入导出 Excel
+- 媒体：图片、音视频、网页快照、嵌入外部程序，每个形状可挂 JS 脚本
+- 动画：17 种切换动画 + 形状入场动画
+- 导出：单文件 HTML 放映，放映时可翻页、全屏、画笔批注
+- 插件：水印、页码、进度条、网页嵌入，均可由 `build/plugins/` 下的 DLL 增删
 
-## 构建
+### 构建
 
-需要 **Windows 10/11 x64** + **MinGW-w64 (x86_64)** + PowerShell。
+需要 Windows 10/11 x64、MinGW-w64（x86_64）和 PowerShell。
 
 ```powershell
-# 编译器在 PATH 里（或用环境变量 YCZ_GXX 指定）
 powershell -ExecutionPolicy RemoteSigned -File build.ps1
 ```
 
 产物：
 
 ```
-build\pptx-core.dll        内核（Python 通过 ctypes 调用）
-build\plugins\*.dll        示例插件
-build\pptx-tool.exe        可选命令行工具（加 -WithExe）
+build\pptx-core.dll     内核（Python 通过 ctypes 调用）
+build\plugins\*.dll     示例插件
+build\pptx-tool.exe     可选命令行工具（加 -WithExe）
 ```
 
-> 默认不生成 exe：部分杀软对刚链接出的未签名 exe 比较敏感。
-
-## 运行
+### 运行
 
 ```powershell
-pip install customtkinter pillow      # 仅这两项
-python src\pyui\editor.py             # 或用打包好的便携版
+pip install customtkinter pillow
+python src\pyui\editor.py
 ```
 
-`src\pyui\core.py::find_dll()` 会依次在 `src\pyui`、`build\`、`..\build` 等位置找 `pptx-core.dll`，所以只要保持 `src\` 与 `build\` 同级即可。
+`src\pyui\core.py` 会在 `src\pyui`、`build\`、`..\build` 中查找 `pptx-core.dll`，保持 `src\` 与 `build\` 同级即可。
 
-## 打包成 exe（可选）
+### 插件
 
-```powershell
-pip install pyinstaller
-pyinstaller --noconfirm --onedir --windowed --name ycz --contents-directory "." `
-  --icon ycz.ico --add-data "build\pptx-core.dll;build" `
-  --add-data "build\plugins;build\plugins" --add-data "templates\空白.pptx;templates" `
-  --collect-data customtkinter src\pyui\editor.py
-```
-
-冻结后资源路径走 `sys._MEIPASS`，`core.find_dll()` 与 `editor._app_root()` 已适配。
-
-## 插件
-
-**一个 dll 就是一个插件**，放进 `build\plugins\` 重启即生效，删掉即卸载。
-
-最小实现两个函数：
+一个 DLL 就是一个插件，放进 `build\plugins\` 后重启生效，删掉即卸载。最少只需导出两个函数：
 
 ```cpp
-const PptPluginInfo* GetPluginInfo();   // 名字/作者/版本/简介
-int InitPlugin(const PptHostIf* host);  // 宿主表：log / slide_count / slide_title / 画布尺寸
+const PptPluginInfo* GetPluginInfo();
+int InitPlugin(const PptHostIf* host);
 ```
 
-可选钩子：`HookHtmlHead`、`HookHtmlSlide`、`HookTransition`、`HookCommand`。
+可选钩子：`HookHtmlHead`、`HookHtmlSlide`、`HookTransition`、`HookCommand`。编译方式与字段定义见 [sdk/](sdk/)。
 
-编译：
+### 已知问题
 
-```bash
-g++ -std=c++17 -O2 -shared -DPPT_PLUGIN_EXPORTS my_plugin.cpp -o my_plugin.dll -static-libgcc -static-libstdc++
-```
+- 整页渲染约 200 ms/帧，拖动时已改为只画选框，但尚无渲染缓存与脏矩形
+- 单文件 exe 启动需解包，约 2–4 秒
+- 表格暂不支持合并单元格、列宽拖拽、公式
+- 文字排版为手算换行 + 自动缩小，行距与段距控制较粗
+- 仅支持 Windows；未签名 exe 可能被杀软误报
 
-ABI 只用 C 导出 + POD 结构 + char 缓冲区，不跨 dll 传 `std::string`。详见 `sdk/`（含一个可直接编译的页码插件）。
+### 关于 AI 参与
 
-## 测试
+本项目由 **Qwen** 与 **Doubao** 两个模型先后协作完成：早期版本由 **Qwen** 搭建底层与界面骨架，后续功能由 **Doubao** 迭代实现。人类作者负责需求定义、交互设计、逐轮验收、缺陷定位与发布维护。
+
+项目以 MIT 协议开源，欢迎任何人修改、分发、商用。
+
+## English
+
+**ycz** is a lightweight presentation editor. A C++ core parses, renders and writes back `.pptx` files; a Python UI handles interaction; plugins load as DLLs at runtime. It is not meant to replace PowerPoint, but to be a tool where **the core stays fixed, behavior stays swappable, and a presentation can travel with you**.
+
+### Features
+
+- Open / new / save / save-as `.pptx`, 80-step undo
+- Text: font, size, color, bold/italic/underline, alignment, in-place editing, auto shrink for overflow
+- Shapes: 45 presets (basic / lines and arrows / 3D / flowchart), drag, resize, rotate, multi-select, align and distribute, snapping guides
+- Tables: Excel-style grid and header, whole-table drag, cell editing, add/remove rows and columns, Excel import and export
+- Media: images, video, audio, web snapshots, embedded external programs, per-shape JavaScript
+- Animation: 17 slide transitions plus shape entrance animations
+- Export: single-file HTML slideshow with paging, fullscreen and a pen layer
+- Plugins: watermark, page numbers, progress bar, web embed, all addable or removable as DLLs under `build/plugins/`
+
+### Build
+
+Requires Windows 10/11 x64, MinGW-w64 (x86_64) and PowerShell.
 
 ```powershell
-python test_core.py        # 内核 + ctypes：编辑、撤销、回写保真、导出
-python test_editor.py      # 界面：多选、对齐、存盘往返
-python test_excel_table.py # 表格 Excel 风格与导入导出
+powershell -ExecutionPolicy RemoteSigned -File build.ps1
 ```
 
-共 15 个测试脚本，覆盖内核、界面、表格、动画、插件、脚本高亮等。
+Output:
 
-## 已知问题
+```
+build\pptx-core.dll     kernel (loaded by Python through ctypes)
+build\plugins\*.dll     sample plugins
+build\pptx-tool.exe     optional CLI (pass -WithExe)
+```
 
-- 整页渲染约 **200 ms/帧**（GDI+ 逐形状绘制，含阴影/图片），拖动时已改为"只画选框、停手再渲染"，但尚未做渲染缓存与脏矩形
-- 单文件 exe 启动需解包，约 2–4 秒
-- 表格不支持合并单元格、列宽拖拽、公式
-- 文字排版为手算换行 + 自动缩小（下限 55%），行距/段距控制较粗
-- 未签名 exe / 新编 dll 可能被 360 等误报，加信任即可
-- 仅 Windows（依赖 GDI+ 与 Win32 API）
+### Run
 
-## 关于 AI 参与
+```powershell
+pip install customtkinter pillow
+python src\pyui\editor.py
+```
 
-**本项目代码几乎全部由一个 AI Agent（豆包）生成。**
+`src\pyui\core.py` looks for `pptx-core.dll` in `src\pyui`, `build\` and `..\build`, so keep `src\` and `build\` side by side.
 
-人类作者负责：产品定位与交互设计、需求拆解与优先级、每一轮的功能验收与回归测试、缺陷复现与修复方向决策、打包发布与维护。
+### Plugins
 
-如果你在意 AIGC 来源，请知悉这一点后再决定是否使用或贡献。项目以 MIT 协议开源，欢迎任何人修改、分发、商用。
+One DLL is one plugin: drop it into `build\plugins\`, restart to load, delete to unload. The minimum is two exports:
 
-Code largely written by an AI agent under human direction, review and testing.
+```cpp
+const PptPluginInfo* GetPluginInfo();
+int InitPlugin(const PptHostIf* host);
+```
+
+Optional hooks: `HookHtmlHead`, `HookHtmlSlide`, `HookTransition`, `HookCommand`. See [sdk/](sdk/) for the ABI and build command.
+
+### Known issues
+
+- Full-page rendering takes about 200 ms per frame; during drags only the selection box is painted, but there is no render cache or dirty-rectangle yet
+- The single-file exe unpacks at startup, roughly 2–4 seconds
+- Tables do not support merged cells, column resizing or formulas
+- Text layout is manual line breaking plus auto shrink; line and paragraph spacing controls are coarse
+- Windows only; unsigned exe files may trigger antivirus false positives
+
+### About AI involvement
+
+This project was built by two models in sequence: **Qwen** created the early foundation and UI skeleton, and **Doubao** implemented the later feature work. The human author defined requirements, designed interactions, reviewed and tested every round, located defects and handles releases.
+
+Released under the MIT license: modify, distribute and use commercially as you like.
+
+> AI 翻译
 
 ## License
 
