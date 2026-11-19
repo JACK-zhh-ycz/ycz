@@ -141,4 +141,10 @@ Released under CC0 1.0: the work is in the public domain, modify, distribute and
 
 ## License
 
-CC0 1.0 Universal (public domain dedication). See [LICENSE](LICENSE).
+本仓库代码全部由 AI 生成，无大量人工创造性创作。
+
+标注 CC0 1.0，代表所有人可以自由使用、修改、二次分发，无任何用途限制（含商用）。
+
+⚠️ 提醒：AI 生成代码有可能意外包含带有其他许可的第三方代码片段，若发现请遵循原协议。
+
+CC0 1.0 Universal (public domain dedication). Full text in [LICENSE](LICENSE).
