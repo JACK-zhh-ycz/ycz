@@ -1,21 +1,23 @@
 # ============================================================
-#  pptx-studio one-click build
+#  ycz one-click build
 #  Usage:  powershell -ExecutionPolicy RemoteSigned -File build.ps1
 #          powershell -ExecutionPolicy RemoteSigned -File build.ps1 -WithExe
-#  Output: build\pptx-core.dll     editor kernel (called by Python ctypes)
+#  Output: build\pptx-core.dll     editor kernel (loaded by Python ctypes)
 #          build\plugins\*.dll     sample plugins
 #          build\pptx-tool.exe     command line tool (only with -WithExe)
-#  NOTE: the CLI is built only on request: some antivirus products
-#        quarantine freshly linked unsigned exe files on sight.
+#  NOTE: keep this file ASCII-only. Windows PowerShell 5.1 reads .ps1
+#        as ANSI when there is no BOM, and non-ASCII comments break parsing.
 # ============================================================
 param([switch]$WithExe)
-# 编译器定位：优先环境变量 YCZ_GXX / PATH，其次常见安装路径
+
+# Toolchain lookup: env var first, then PATH, then a common install path.
 function Find-Tool([string]$name, [string]$fallback) {
-  if ($env:YCZ_GXX -and $name -eq 'g++') { return $env:YCZ_GXX }
+  if ($name -eq 'g++' -and $env:YCZ_GXX) { return $env:YCZ_GXX }
+  if ($name -eq 'windres' -and $env:YCZ_RC) { return $env:YCZ_RC }
   $cmd = Get-Command $name -ErrorAction SilentlyContinue
   if ($cmd) { return $cmd.Source }
   if (Test-Path -LiteralPath $fallback) { return $fallback }
-  Write-Output "NOT FOUND: $name  — 安装 MinGW-w64 (x86_64) 并加入 PATH，或设置环境变量 YCZ_GXX / YCZ_RC"
+  Write-Output "NOT FOUND: $name - install MinGW-w64 (x86_64) and add it to PATH, or set YCZ_GXX / YCZ_RC"
   exit 1
 }
 $G     = Find-Tool "g++"     "D:\Desktop\code\mingw64\bin\g++.exe"
@@ -48,7 +50,8 @@ $base_srcs = @(
 $bobjs = @($base_srcs | ForEach-Object { Compile-Of $_ })
 
 # ---------------- version resources ----------------
-# 给每个产物写入公司名/产品名/版本/版权：正常软件都有的信息，缺失反而容易被杀软判为可疑
+# Embed name/product/version/copyright: normal signed-looking metadata,
+# its absence is what makes antivirus engines suspicious.
 function Compile-Rc([string]$rel, [string]$name) {
   $r = "$OBJ\$name.res"
   & $RC -I "$SRC\res" "$SRC\res\$rel" -O coff -o $r 2>&1 | Out-Null
@@ -60,7 +63,8 @@ $tool_res = Compile-Rc "tool.rc" "tool"
 $plug_res = Compile-Rc "plugin.rc" "plugin"
 
 # ---------------- command line tool (optional) ----------------
-# 默认不生成 exe：杀软对刚链接出来的未签名 exe 最敏感，日常改内核不需要它
+# Off by default: antivirus engines are most sensitive to freshly linked
+# unsigned exe files, and editing the kernel does not need the CLI.
 if ($WithExe) {
   $mobj = Compile-Of "main.cpp"
   $exe  = "$OUT\pptx-tool.exe"
@@ -87,7 +91,7 @@ if ($LASTEXITCODE -ne 0) {
   exit 1
 }
 
-# link MinGW runtime statically, otherwise Python ctypes cannot load the DLL
+# Link the MinGW runtime statically, otherwise Python ctypes cannot load the DLL.
 $COREDLL = "$OUT\pptx-core.dll"
 if (Test-Path -LiteralPath $COREDLL) { Remove-Item -LiteralPath $COREDLL -Force }
 
